@@ -1,0 +1,62 @@
+<?php
+
+/**
+ * @file
+ * Module file. Gives the the users ability to setup personal settings through the Openuser webservice
+ */
+
+/**
+ * Implements hook_menu();
+ * @return boolean
+ */
+function bibdk_usersettings_menu() {
+    $items['usersettings'] = array(
+    'title' => 'Usersettings',
+    'page callback' => 'drupal_get_form', 
+    'page arguments' => array('bibdk_usersettings_openuser_search'),
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+/**
+ * Callback function for hook_menu bibdk_usersettings_menu
+*/
+function bibdk_usersettings_openuser_search( $form, $form_state) {
+  $form = array();
+  
+  $form['test'] = array(
+    '#markup' => t('ChooseYourSettings'),
+  );
+  
+  $form['sbSelfPickup'] = array(
+    '#type' => 'checkbox', 
+    '#title' => t('Selfpickup at statsbiblioteket.'),
+  );
+    
+  $form['submit'] = array(
+    '#type' => 'submit', 
+    '#value' => t('setSelfPickup')
+  );
+    
+  return $form;
+}
+
+function bibdk_usersettings_openuser_search_submit($form, $form_state) {
+  global $user;
+  dpm($user);
+  $value = isset($form_state['values']['sbSelfPickup']) ? $form_state['values']['sbSelfPickup'] : NULL;
+  
+
+ dpm($form_state);
+ 
+ $response = ding_provider_invoke('user', 'set_setting', $user->name, 'sbselfpickup', $value );
+ //$response = ding_provider_invoke('user', 'get_setting', 'ana', 'sbselfpickup');
+ //$response = ding_provider_invoke('user', 'delete_setting', 'ana', 'sbselfpickup');
+ //dpm($response);
+ return $response;
+ 
+ }
+
+    
