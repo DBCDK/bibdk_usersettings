@@ -3,60 +3,146 @@
 /**
  * @file
  * Module file. Gives the the users ability to setup personal settings through the Openuser webservice
+ *
+ * The following methods can be used for CRUD actions:
+ *  ding_provider_invoke('user', 'set_setting', $user_name, $settings_name, $settings_value );
+ *  ding_provider_invoke('user', 'get_setting', $user_name, $settings_name);
+ *  ding_provider_invoke('user', 'delete_setting', $user_name, $settings_name);
+
  */
 
 /**
- * Implements hook_menu();
- * @return boolean
- */
-function bibdk_usersettings_menu() {
-    $items['usersettings'] = array(
-    'title' => 'Usersettings',
-    'page callback' => 'drupal_get_form', 
-    'page arguments' => array('bibdk_usersettings_openuser_search'),
-    'access callback' => TRUE,
-  );
+ * Implememts hook_user_profile_tabs (
+ *
+ * @see ding_user.module)
+ * */
+function bibdk_usersettings_user_profile2_tabs() {
+  $ret = new stdClass();
+  $ret->label = t('Settings');
+  $ret->form = 'bibdk_usersettings_user_settings_form';
+  $ret->type = 'bibdk_usersettings_user_settings';
+  return $ret;
+}
 
-  return $items;
+
+function bibdk_usersettings_theme(){
+  return array('bibdk_usersettings_form' => array(
+    'variables' => array('tabs' => array(), 'settings' => array()),
+    'template' => 'theme/bibdk-usersettings-form',
+    'render_element' => 'form',
+  ));
 }
 
 /**
- * Callback function for hook_menu bibdk_usersettings_menu
-*/
-function bibdk_usersettings_openuser_search( $form, $form_state) {
-  $form = array();
-  
-  $form['test'] = array(
-    '#markup' => t('ChooseYourSettings'),
+ * Form for user settings
+ */
+function bibdk_usersettings_user_settings_form($form, $form_state){
+
+
+  $tabs = module_invoke_all('bibdk_usersettings_user_tabs');
+
+
+  foreach($tabs as $key => $tab){
+
+    $tabs[$key]['attributes'] = '';
+  }
+  $elements = module_invoke_all('bibdk_usersettings_user_settings');
+
+  foreach($elements  as $element){
+
+    // Create new tabs
+    if (!isset($tab_elements[$element['#tab']])){
+      $tab_elements[$element['#tab']] = array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'id' => $element['#tab'],
+        ),
+      );
+    }
+
+    // Add elements to tab
+    $tab_elements[$element['#tab']] += $element;
+
+    $tab_elements[$element['#tab']]['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('save_settings'),
+      '#action' => 'bibdk_usersettings_user_settings_form_submit',
+    );
+
+
+  }
+
+  $form['tabs'] = array(
+    '#theme' => 'bibdk_usersettings_form',
+    '#tabs' => $tabs,
+    //'#settings' => $tab_elements
   );
-  
-  $form['sbSelfPickup'] = array(
-    '#type' => 'checkbox', 
-    '#title' => t('Selfpickup at statsbiblioteket.'),
+
+  $form['elements'] = $tab_elements;
+  $form['elements'] += array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array(
+        'tabs-sections'
+      ),
+    ),
+
   );
-    
-  $form['submit'] = array(
-    '#type' => 'submit', 
-    '#value' => t('setSelfPickup')
-  );
-    
+
+
   return $form;
+
 }
 
-function bibdk_usersettings_openuser_search_submit($form, $form_state) {
+/** submit add/update all user settings
+ * @param $form
+ * @param $form_state
+ */
+function bibdk_usersettings_user_settings_form_submit($form, $form_state){
+  // Exclude unnecessary elements.
+  form_state_values_clean($form_state);
+
+  foreach ($form_state['values'] as $key => $value) {
+    if (is_array($value) && isset($form_state['values']['array_filter'])) {
+      $value = array_keys(array_filter($value));
+    }
+    bibdk_usersettings_user_settings_set($key, $value);
+  }
+
+  drupal_set_message(t('bibdk_usersetting_has_been_updated'));
+}
+
+/** Wrapper to get user settings
+ * @param $name
+ * @param $default
+ * @return mixed
+ */
+function bibdk_usersettings_user_settings_get($name, $default){
   global $user;
-  dpm($user);
-  $value = isset($form_state['values']['sbSelfPickup']) ? $form_state['values']['sbSelfPickup'] : NULL;
-  
 
- dpm($form_state);
- 
- $response = ding_provider_invoke('user', 'set_setting', $user->name, 'sbselfpickup', $value );
- //$response = ding_provider_invoke('user', 'get_setting', 'ana', 'sbselfpickup');
- //$response = ding_provider_invoke('user', 'delete_setting', 'ana', 'sbselfpickup');
- //dpm($response);
- return $response;
- 
- }
+  // TODO: Wait for new version for bibdkUserInfo service
+  /* if ($return = ding_provider_invoke('user', 'get_setting', $user->name, $name)){
+    return $return;
+  }
+  else
+    return $default;
+  */
 
-    
+  return variable_get($name, $default);
+}
+
+
+/** Wrapper to set user settings
+ * @param $name
+ * @param $value
+ * @return null
+ */
+function bibdk_usersettings_user_settings_set($name, $value){
+  global $user;
+
+  // TODO: Wait for new version for bibdkUserInfo service
+  /* ding_provider_invoke('user', 'set_setting', $user->name, $name, $value );
+  */
+
+  variable_set($name, $value);
+}
