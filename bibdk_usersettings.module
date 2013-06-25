@@ -42,9 +42,16 @@ function bibdk_usersettings_user_settings_form($form, $form_state){
 
 
   foreach($tabs as $key => $tab){
-
-    $tabs[$key]['attributes'] = '';
+    if (!isset($firstelement)){
+      $tabs[$key]['attributes']['class'] = array('active');
+      $firstelement = true;
+    }
+    else
+      $tabs[$key]['attributes'] = '';
   }
+
+
+
   $elements = module_invoke_all('bibdk_usersettings_user_settings');
 
   foreach($elements  as $element){
@@ -82,7 +89,9 @@ function bibdk_usersettings_user_settings_form($form, $form_state){
     '#type' => 'container',
     '#attributes' => array(
       'class' => array(
-        'tabs-sections'
+        'tabs-sections',
+        'bibdk-usersettings',
+        'clearfix',
       ),
     ),
 
