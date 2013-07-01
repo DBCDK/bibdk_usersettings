@@ -3,61 +3,141 @@
 /**
  * @file
  * Module file. Gives the the users ability to setup personal settings through the Openuser webservice
+ *
+ * The following methods can be used for CRUD actions:
+ *  ding_provider_invoke('user', 'set_setting', $user_name, $settings_name, $settings_value );
+ *  ding_provider_invoke('user', 'get_setting', $user_name, $settings_name);
+ *  ding_provider_invoke('user', 'delete_setting', $user_name, $settings_name);
+
  */
 
 /**
- * Implements hook_menu();
- * @return boolean
- */
-function bibdk_usersettings_menu() {
-    $items['usersettings'] = array(
-    'title' => 'Usersettings',
-    'page callback' => 'drupal_get_form', 
-    'page arguments' => array('bibdk_usersettings_openuser_search'),
-    'access callback' => TRUE,
-  );
+ * Implememts hook_user_profile_tabs (
+ *
+ * @see ding_user.module)
+ * */
+function bibdk_usersettings_user_profile2_tabs() {
+  $ret = new stdClass();
+  $ret->label = t('Settings');
+  $ret->form = 'bibdk_usersettings_user_settings_form';
+  $ret->type = 'bibdk_usersettings_user_settings';
+  return $ret;
+}
 
-  return $items;
+function bibdk_usersettings_theme(){
+  return array('bibdk_usersettings_form' => array(
+    'variables' => array('tabs' => array(), 'settings' => array()),
+    'template' => 'theme/bibdk-usersettings-form',
+    'render_element' => 'form',
+  ));
 }
 
 /**
- * Callback function for hook_menu bibdk_usersettings_menu
-*/
-function bibdk_usersettings_openuser_search( $form, $form_state) {
-  $form = array();
+ * Form for user settings
+ */
+function bibdk_usersettings_user_settings_form($form, $form_state){
 
-  //Headline
-  $form['test'] = array(
-    '#markup' => t('ChooseYourSettings'),
+  $tabs = module_invoke_all('bibdk_usersettings_user_tabs');
+  uasort($tabs, 'drupal_sort_weight');
+
+  foreach($tabs as $key => $tab){
+    if (!isset($firstelement)){
+      $tabs[$key]['attributes']['class'] = array('active');
+      $firstelement = $key;
+    }
+    else
+      $tabs[$key]['attributes'] = array();
+  }
+
+  $elements = module_invoke_all('bibdk_usersettings_user_settings');
+  uasort($elements, 'drupal_sort_weight');
+
+
+  foreach($elements  as $element){
+
+    // Create new tabs
+    if (!isset($tab_elements[$element['#tab']])){
+      $tab_elements[$element['#tab']] = array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'id' => $element['#tab'],
+          'class' => array('visuallyhidden'),
+        ),
+      );
+    }
+
+
+    // Add elements to tab
+    $tab_elements[$element['#tab']] += $element;
+
+    $tab_elements[$element['#tab']]['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('save_settings'),
+      '#action' => 'bibdk_usersettings_user_settings_form_submit',
+    );
+
+
+  }
+  $tab_elements[$firstelement]['#attributes']['class'] = array();
+
+
+  $form['tabs'] = array(
+    '#theme' => 'bibdk_usersettings_form',
+    '#tabs' => $tabs,
+    //'#settings' => $tab_elements
   );
-  
-  //Checkbox 
-  $form['sbSelfPickup'] = array(
-    '#type' => 'checkbox', 
-    '#title' => t('Selfpickup at statsbiblioteket.'),
-    '#default_value' => bibdk_usersettings_openuser_search_setup($form, $form_state),
+
+  $form['elements'] = $tab_elements;
+  $form['elements'] += array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array(
+        'tabs-sections',
+        'bibdk-usersettings',
+        'clearfix',
+      ),
+    ),
   );
-    
-  //Submitbutton
-  $form['submit'] = array(
-    '#type' => 'submit', 
-    '#value' => t('setSelfPickup')
-  );
-    
+
   return $form;
+
 }
 
-function bibdk_usersettings_openuser_search_submit($form, $form_state) {
+/** submit add/update all user settings
+ * @param $form
+ * @param $form_state
+ */
+function bibdk_usersettings_user_settings_form_submit($form, $form_state){
+  // Exclude unnecessary elements.
+  form_state_values_clean($form_state);
+
+  foreach ($form_state['values'] as $key => $value) {
+    if (is_array($value) && isset($form_state['values']['array_filter'])) {
+      $value = array_keys(array_filter($value));
+    }
+    bibdk_usersettings_user_settings_set($key, $value);
+  }
+
+  drupal_set_message(t('bibdk_usersetting_has_been_updated'));
+}
+
+/** Wrapper to get user settings
+ * @param $name
+ * @param $default
+ * @return mixed
+ */
+function bibdk_usersettings_user_settings_get($name, $default){
   global $user;
-   
+<<<<<<< HEAD
+
   $value = isset($form_state['values']['sbSelfPickup']) ? $form_state['values']['sbSelfPickup'] : NULL;
   $response = ding_provider_invoke('user', 'set_setting', $user->name, 'sbselfpickup', $value );
-  
+
   //$response = ding_provider_invoke('user', 'get_setting', 'ana', 'sbselfpickup');
   //$response = ding_provider_invoke('user', 'delete_setting', 'ana', 'sbselfpickup');
   //dpm($response);
  return $response;
- 
+
  }
 
  function bibdk_usersettings_openuser_search_setup($form, $form_state) {
@@ -68,10 +148,10 @@ function bibdk_usersettings_openuser_search_submit($form, $form_state) {
    //dpm($resonsevalue);
    return $resonsevalue;
  }
- 
+
  /**
- * @param $xml xml from request to openuserinfo 
- * @return array 
+ * @param $xml xml from request to openuserinfo
+ * @return array
  */
 function bibdk_usersettings_openuser_parse_userinfo($xml) {
   $xpath = bibdk_favourite_load_userinfo($xml);
@@ -79,10 +159,10 @@ function bibdk_usersettings_openuser_parse_userinfo($xml) {
   if (empty($xpath)) {
     return FALSE;
   }
-  
+
   $query = '//oui:settingString';
   $nodelist = $xpath->query($query);
-  
+
   // check if empty
   if (empty($nodelist)) {
     return array();
@@ -115,3 +195,71 @@ function bibdk_favourite_load_userinfo($xml) {
   $xpath->registerNamespace('oui', 'http://oss.dbc.dk/ns/openuserinfo');
   return $xpath;
 }
+=======
+
+  if (!ding_user_is_provider_user($user)) {
+    return $default;
+  }
+  try {
+    $creds = ding_user_get_creds($user);
+  }
+  catch (Exception $e) {
+    return $default;
+  }
+
+  if ($return = ding_provider_invoke('user', 'get_setting', $creds['name'], $name)){
+    return _bibdk_usersettings_parse_response($return);
+  }
+  else
+    return $default;
+
+}
+
+function _bibdk_usersettings_parse_response($response) {
+  $dom = new DomDocument();
+  if (!@$dom->loadXML($response)) {
+    if (variable_get('bibdk_provider_enable_logging')) {
+      watchdog('bibdk_cart', t('bibdk_usersettings could not load response: %xml', array('%xml' => var_export($response, TRUE))), array(), WATCHDOG_ERROR);
+    }
+    return null;
+  }
+  $xpath = new DomXPATH($dom);
+  $xpath->registerNamespace('oui', 'http://oss.dbc.dk/ns/openuserinfo');
+  if (!isset($xpath)) {
+    return null;
+  }
+  // grap value
+  $query = '//oui:settingString';
+  $nodelist = $xpath->query($query);
+  foreach($nodelist as $delta => $node){
+    $return = $node->nodeValue;
+  }
+
+  return $return;
+
+}
+
+
+/** Wrapper to set user settings
+ * @param $name
+ * @param $value
+ * @return null
+ */
+function bibdk_usersettings_user_settings_set($name, $value){
+  global $user;
+
+  if (!ding_user_is_provider_user($user)) {
+    return false;
+  }
+  try {
+    $creds = ding_user_get_creds($user);
+  }
+  catch (Exception $e) {
+    return false;
+  }
+
+  ding_provider_invoke('user', 'set_setting', $creds['name'], $name, $value );
+
+
+}
+>>>>>>> feature/80-export_refworks_endnote
