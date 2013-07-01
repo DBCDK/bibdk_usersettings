@@ -128,74 +128,6 @@ function bibdk_usersettings_user_settings_form_submit($form, $form_state){
  */
 function bibdk_usersettings_user_settings_get($name, $default){
   global $user;
-<<<<<<< HEAD
-
-  $value = isset($form_state['values']['sbSelfPickup']) ? $form_state['values']['sbSelfPickup'] : NULL;
-  $response = ding_provider_invoke('user', 'set_setting', $user->name, 'sbselfpickup', $value );
-
-  //$response = ding_provider_invoke('user', 'get_setting', 'ana', 'sbselfpickup');
-  //$response = ding_provider_invoke('user', 'delete_setting', 'ana', 'sbselfpickup');
-  //dpm($response);
- return $response;
-
- }
-
- function bibdk_usersettings_openuser_search_setup($form, $form_state) {
-   global $user;
-   $dingresponse = ding_provider_invoke('user', 'get_setting', $user->name, 'sbselfpickup');
-   $response = bibdk_usersettings_openuser_parse_userinfo($dingresponse);
-   $resonsevalue = isset($response['oui:settingType']) ? $response['oui:settingString'] : FALSE;
-   //dpm($resonsevalue);
-   return $resonsevalue;
- }
-
- /**
- * @param $xml xml from request to openuserinfo
- * @return array
- */
-function bibdk_usersettings_openuser_parse_userinfo($xml) {
-  $xpath = bibdk_favourite_load_userinfo($xml);
-
-  if (empty($xpath)) {
-    return FALSE;
-  }
-
-  $query = '//oui:settingString';
-  $nodelist = $xpath->query($query);
-
-  // check if empty
-  if (empty($nodelist)) {
-    return array();
-  }
-
-  foreach ($nodelist as $node) {
-    if (!empty($node->childNodes)) {
-      foreach ($node->childNodes as $child) {
-        $sbselfpickup[$child->nodeName] = $child->nodeValue;
-      }
-      if (!empty($sbselfpickup)) {
-        $sbselfpickup[$sbselfpickup['oui:settingType']] = $sbselfpickup;
-      }
-    }
-
-  }
-  $resonsevalue = isset($sbselfpickup['oui:settingType']) ? $sbselfpickup : FALSE;
-  return $resonsevalue;
-}
-
-function bibdk_favourite_load_userinfo($xml) {
-  $dom = new DomDocument();
-  if (!@$dom->loadXML($xml)) {
-    if (variable_get('bibdk_provider_enable_logging')) {
-      watchdog('bibdk_favourite', t('BIBDK favourite could not load response: %xml', array('%xml' => var_export($xml, TRUE))), array(), WATCHDOG_ERROR);
-    }
-    return array();
-  }
-  $xpath = new DomXPATH($dom);
-  $xpath->registerNamespace('oui', 'http://oss.dbc.dk/ns/openuserinfo');
-  return $xpath;
-}
-=======
 
   if (!ding_user_is_provider_user($user)) {
     return $default;
@@ -262,4 +194,3 @@ function bibdk_usersettings_user_settings_set($name, $value){
 
 
 }
->>>>>>> feature/80-export_refworks_endnote
