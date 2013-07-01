@@ -24,7 +24,6 @@ function bibdk_usersettings_user_profile2_tabs() {
   return $ret;
 }
 
-
 function bibdk_usersettings_theme(){
   return array('bibdk_usersettings_form' => array(
     'variables' => array('tabs' => array(), 'settings' => array()),
@@ -39,20 +38,20 @@ function bibdk_usersettings_theme(){
 function bibdk_usersettings_user_settings_form($form, $form_state){
 
   $tabs = module_invoke_all('bibdk_usersettings_user_tabs');
-
+  uasort($tabs, 'drupal_sort_weight');
 
   foreach($tabs as $key => $tab){
     if (!isset($firstelement)){
       $tabs[$key]['attributes']['class'] = array('active');
-      $firstelement = true;
+      $firstelement = $key;
     }
     else
-      $tabs[$key]['attributes'] = '';
+      $tabs[$key]['attributes'] = array();
   }
 
-
-
   $elements = module_invoke_all('bibdk_usersettings_user_settings');
+  uasort($elements, 'drupal_sort_weight');
+
 
   foreach($elements  as $element){
 
@@ -62,9 +61,11 @@ function bibdk_usersettings_user_settings_form($form, $form_state){
         '#type' => 'container',
         '#attributes' => array(
           'id' => $element['#tab'],
+          'class' => array('visuallyhidden'),
         ),
       );
     }
+
 
     // Add elements to tab
     $tab_elements[$element['#tab']] += $element;
@@ -77,6 +78,8 @@ function bibdk_usersettings_user_settings_form($form, $form_state){
 
 
   }
+  $tab_elements[$firstelement]['#attributes']['class'] = array();
+
 
   $form['tabs'] = array(
     '#theme' => 'bibdk_usersettings_form',
@@ -96,7 +99,6 @@ function bibdk_usersettings_user_settings_form($form, $form_state){
     ),
 
   );
-
 
   return $form;
 
