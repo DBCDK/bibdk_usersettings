@@ -2,5 +2,5 @@ name = Bibliotek.dk usersettings
 description = Enable personal usersettings for display
 package = Bibliotek.dk
 core = 7.x
-version = 7.x-0.11
+version = 7.x-0.1
 
