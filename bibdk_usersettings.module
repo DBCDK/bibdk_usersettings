@@ -24,39 +24,44 @@ function bibdk_usersettings_user_profile2_tabs() {
   return $ret;
 }
 
-function bibdk_usersettings_theme(){
+function bibdk_usersettings_theme() {
   return array('bibdk_usersettings_form' => array(
-    'variables' => array('tabs' => array(), 'settings' => array()),
-    'template' => 'theme/bibdk-usersettings-form',
-    'render_element' => 'form',
-  ));
+      'variables' => array('tabs' => array(), 'settings' => array()),
+      'template' => 'theme/bibdk-usersettings-form',
+      'render_element' => 'form',
+      ));
 }
 
 /**
  * Form for user settings
  */
-function bibdk_usersettings_user_settings_form($form, $form_state){
-
+function bibdk_usersettings_user_settings_form($form, $form_state) {
+    
   $tabs = module_invoke_all('bibdk_usersettings_user_tabs');
   uasort($tabs, 'drupal_sort_weight');
+  
+  if (isset($form_state['clicked_button']['#name'])) {
+    $firstelement = $form_state['clicked_button']['#name'];
+    $tabs[$firstelement]['attributes']['class'] = array('active');
+  }
 
-  foreach($tabs as $key => $tab){
-    if (!isset($firstelement)){
+  foreach ($tabs as $key => $tab) {
+    if (!isset($firstelement)) {
       $tabs[$key]['attributes']['class'] = array('active');
       $firstelement = $key;
     }
-    else
+    else{
+      if ($key != $firstelement)
       $tabs[$key]['attributes'] = array();
+    }
   }
-
   $elements = module_invoke_all('bibdk_usersettings_user_settings');
+
   uasort($elements, 'drupal_sort_weight');
 
-
-  foreach($elements  as $element){
-
+  foreach ($elements as $element) {
     // Create new tabs
-    if (!isset($tab_elements[$element['#tab']])){
+    if (!isset($tab_elements[$element['#tab']])) {
       $tab_elements[$element['#tab']] = array(
         '#type' => 'container',
         '#attributes' => array(
@@ -65,8 +70,6 @@ function bibdk_usersettings_user_settings_form($form, $form_state){
         ),
       );
     }
-
-
     // Add elements to tab
     $tab_elements[$element['#tab']] += $element;
 
@@ -74,17 +77,15 @@ function bibdk_usersettings_user_settings_form($form, $form_state){
       '#type' => 'submit',
       '#value' => t('save_settings'),
       '#action' => 'bibdk_usersettings_user_settings_form_submit',
+      '#name' => $element['#tab'],
     );
-
-
   }
   $tab_elements[$firstelement]['#attributes']['class'] = array();
-
 
   $form['tabs'] = array(
     '#theme' => 'bibdk_usersettings_form',
     '#tabs' => $tabs,
-    //'#settings' => $tab_elements
+      //'#settings' => $tab_elements
   );
 
   $form['elements'] = $tab_elements;
@@ -100,16 +101,19 @@ function bibdk_usersettings_user_settings_form($form, $form_state){
   );
 
   return $form;
-
 }
+
 
 /** submit add/update all user settings
  * @param $form
  * @param $form_state
  */
-function bibdk_usersettings_user_settings_form_submit($form, $form_state){
+function bibdk_usersettings_user_settings_form_submit($form, &$form_state) {
   // Exclude unnecessary elements.
   form_state_values_clean($form_state);
+
+  // also unset clicked button
+  unset($form_state['values'][$form_state['clicked_button']['#name']]);
 
   foreach ($form_state['values'] as $key => $value) {
     if (is_array($value) && isset($form_state['values']['array_filter'])) {
@@ -117,6 +121,8 @@ function bibdk_usersettings_user_settings_form_submit($form, $form_state){
     }
     bibdk_usersettings_user_settings_set($key, $value);
   }
+
+  $form_state['rebuild'] = TRUE;
 
   drupal_set_message(t('bibdk_usersetting_has_been_updated'));
 }
@@ -126,7 +132,7 @@ function bibdk_usersettings_user_settings_form_submit($form, $form_state){
  * @param $default
  * @return mixed
  */
-function bibdk_usersettings_user_settings_get($name, $default){
+function bibdk_usersettings_user_settings_get($name, $default) {
   global $user;
 
   if (!ding_user_is_provider_user($user)) {
@@ -134,17 +140,15 @@ function bibdk_usersettings_user_settings_get($name, $default){
   }
   try {
     $creds = ding_user_get_creds($user);
-  }
-  catch (Exception $e) {
+  } catch (Exception $e) {
     return $default;
   }
 
-  if ($return = ding_provider_invoke('user', 'get_setting', $creds['name'], $name)){
+  if ($return = ding_provider_invoke('user', 'get_setting', $creds['name'], $name)) {
     return _bibdk_usersettings_parse_response($return);
   }
   else
     return $default;
-
 }
 
 function _bibdk_usersettings_parse_response($response) {
@@ -163,21 +167,19 @@ function _bibdk_usersettings_parse_response($response) {
   // grap value
   $query = '//oui:settingString';
   $nodelist = $xpath->query($query);
-  foreach($nodelist as $delta => $node){
+  foreach ($nodelist as $delta => $node) {
     $return = $node->nodeValue;
   }
 
   return $return;
-
 }
-
 
 /** Wrapper to set user settings
  * @param $name
  * @param $value
  * @return null
  */
-function bibdk_usersettings_user_settings_set($name, $value){
+function bibdk_usersettings_user_settings_set($name, $value) {
   global $user;
 
   if (!ding_user_is_provider_user($user)) {
@@ -185,12 +187,9 @@ function bibdk_usersettings_user_settings_set($name, $value){
   }
   try {
     $creds = ding_user_get_creds($user);
-  }
-  catch (Exception $e) {
+  } catch (Exception $e) {
     return false;
   }
 
-  ding_provider_invoke('user', 'set_setting', $creds['name'], $name, $value );
-
-
+  ding_provider_invoke('user', 'set_setting', $creds['name'], $name, $value);
 }
