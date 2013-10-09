@@ -1,0 +1,38 @@
+<?php
+
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+class BibdkUserSettingsWebTestCase extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Bibdk Usersettings Test'),
+      'description' => t('Webtest of bibdk usersettings functionality'),
+      'group' => t('bibliotek.dk'),
+    );
+  }
+
+  public function setUp() {
+    parent::setUp('bibdk_usersettings');
+  }
+  
+  public function testCacheTable(){
+    $this->assertTrue(db_table_exists('cache_bibdk_usersettings'),'cache_bibdk_usersettings has been created');
+  }
+  
+  public function testCacheGetAndSet() {
+    // key is userid
+    $key = 1;
+    $name = 'TESTHEST';
+    $value = '24';
+    bibdk_usersettings_set_cache($key, $name, $value);
+    $data = bibdk_usersettings_get_cache(1);
+    $this->assertTrue(is_array($data),'Cache set and get successfully');    
+  }
+  
+  
+  
+}
