@@ -142,19 +142,27 @@ function bibdk_usersettings_user_settings_get($name, $default) {
   } catch (Exception $e) {
     return $default;
   }
-  
+
   $data = bibdk_usersettings_get_cache($user->uid);
   if (isset($data[$name])) {
     return $data[$name];
   }
 
-  if ($return = ding_provider_invoke('user', 'get_setting', $creds['name'], $name)) {
-    $value = _bibdk_usersettings_parse_response($return);
+  $provider_data = _bibdk_user_setting_get_from_provider($name, $creds);
+  if ($provider_data !== FALSE) {
+    $value = _bibdk_usersettings_parse_response($provider_data);
     bibdk_usersettings_set_cache($user->uid, $name, $value);
     return $value;
   }
-  else
-    return $default;
+  
+  return $default;
+}
+
+function _bibdk_user_setting_get_from_provider($name, $creds) {
+  if ($provider_data = ding_provider_invoke('user', 'get_setting', $creds['name'], $name)) {
+    return $provider_data;
+  }
+  return FALSE;
 }
 
 function _bibdk_usersettings_parse_response($response) {
@@ -206,9 +214,8 @@ function bibdk_usersettings_user_settings_set($name, $value) {
 /** Implements hook_user_logout
  * clear cached data
  */
-function bibdk_usersettings_user_logout() {
-  global  $user;
-  bibdk_user_settings_invalidate_cache($user->uid);
+function bibdk_usersettings_user_logout($account) {
+  bibdk_user_settings_invalidate_cache($account->uid);
 }
 
 /** clear all caches in bin:cache_bibdk_usersettings for given key
@@ -221,7 +228,7 @@ function bibdk_user_settings_invalidate_cache($key) {
 
 function bibdk_usersettings_get_cache($key) {
   $cache = cache_get($key, 'cache_bibdk_usersettings');
-  
+
   if ($cache) {
     return $cache->data;
   }
@@ -239,7 +246,7 @@ function bibdk_usersettings_set_cache($key, $name, $value) {
     $data = array();
   }
   $data[$name] = $value;
-  
+
   cache_set($key, $data, 'cache_bibdk_usersettings');
 }
 

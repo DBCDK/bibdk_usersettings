@@ -16,23 +16,64 @@ class BibdkUserSettingsWebTestCase extends DrupalWebTestCase {
   }
 
   public function setUp() {
-    parent::setUp('bibdk_usersettings');
+    parent::setUp('bibdk_usersettings', 'bibdk_test_provider', 'ding_provider');
   }
-  
-  public function testCacheTable(){
-    $this->assertTrue(db_table_exists('cache_bibdk_usersettings'),'cache_bibdk_usersettings has been created');
+
+  public function testRunner() {
+    $this->CacheTableTest();
+    $this->CacheGetAndSetTest();
+    $this->LogoutTest();
+    $this->providerTest();
   }
-  
-  public function testCacheGetAndSet() {
+
+  /** Verify that cache table exists
+   * 
+   */
+  public function CacheTableTest() {
+    $this->assertTrue(db_table_exists('cache_bibdk_usersettings'), 'cache_bibdk_usersettings has been created');
+  }
+
+  /** Verify that get and set methods work as expected
+   * 
+   */
+  public function CacheGetAndSetTest() {
     // key is userid
     $key = 1;
     $name = 'TESTHEST';
     $value = '24';
     bibdk_usersettings_set_cache($key, $name, $value);
     $data = bibdk_usersettings_get_cache(1);
-    $this->assertTrue(is_array($data),'Cache set and get successfully');    
+    $this->assertTrue(is_array($data), 'Cache set and get successfully');
   }
-  
-  
-  
+
+  /** verify that logout invalidates the cache
+   * 
+   */
+  public function LogoutTest() {
+    $key = 1;
+    $name = 'TESTHEST';
+    $value = '24';
+    bibdk_usersettings_set_cache($key, $name, $value);
+
+    $account->uid = 1;
+    bibdk_usersettings_user_logout($account);
+
+    $data = $data = bibdk_usersettings_get_cache(1);
+    $this->assertTrue($data === FALSE, 'cache was invalidated on logout');
+  }
+
+  function providerTest() {
+    $name = 'bibdk_actions_sb_selfpickup';
+    $creds = array('name'=>'testhest@dbc.dk');
+    $provider_data = _bibdk_user_setting_get_from_provider($name, $creds);
+      
+    if ($provider_data !== FALSE) {
+      $value = _bibdk_usersettings_parse_response($provider_data);
+      bibdk_usersettings_set_cache(1, $name, $value);
+    }
+    
+    $data = bibdk_usersettings_get_cache(1);
+    $this->assertTrue(is_array($data), 'Cache set and get successfully via provider methods');
+  }
+
 }
