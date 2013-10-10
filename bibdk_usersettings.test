@@ -20,6 +20,7 @@ class BibdkUserSettingsWebTestCase extends DrupalWebTestCase {
   }
 
   public function testRunner() {
+    module_disable(array('bibdk_provider'));
     $this->CacheTableTest();
     $this->CacheGetAndSetTest();
     $this->LogoutTest();
