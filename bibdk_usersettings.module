@@ -36,10 +36,10 @@ function bibdk_usersettings_theme() {
  * Form for user settings
  */
 function bibdk_usersettings_user_settings_form($form, $form_state) {
-    
+
   $tabs = module_invoke_all('bibdk_usersettings_user_tabs');
   uasort($tabs, 'drupal_sort_weight');
-  
+
   if (isset($form_state['clicked_button']['#name'])) {
     $firstelement = $form_state['clicked_button']['#name'];
     $tabs[$firstelement]['attributes']['class'] = array('active');
@@ -50,9 +50,9 @@ function bibdk_usersettings_user_settings_form($form, $form_state) {
       $tabs[$key]['attributes']['class'] = array('active');
       $firstelement = $key;
     }
-    else{
+    else {
       if ($key != $firstelement)
-      $tabs[$key]['attributes'] = array();
+        $tabs[$key]['attributes'] = array();
     }
   }
   $elements = module_invoke_all('bibdk_usersettings_user_settings');
@@ -103,7 +103,6 @@ function bibdk_usersettings_user_settings_form($form, $form_state) {
   return $form;
 }
 
-
 /** submit add/update all user settings
  * @param $form
  * @param $form_state
@@ -144,11 +143,26 @@ function bibdk_usersettings_user_settings_get($name, $default) {
     return $default;
   }
 
-  if ($return = ding_provider_invoke('user', 'get_setting', $creds['name'], $name)) {
-    return _bibdk_usersettings_parse_response($return);
+  $data = bibdk_usersettings_get_cache($user->uid);
+  if (isset($data[$name])) {
+    return $data[$name];
   }
-  else
-    return $default;
+
+  $provider_data = _bibdk_user_setting_get_from_provider($name, $creds);
+  if ($provider_data !== FALSE) {
+    $value = _bibdk_usersettings_parse_response($provider_data);
+    bibdk_usersettings_set_cache($user->uid, $name, $value);
+    return $value;
+  }
+  
+  return $default;
+}
+
+function _bibdk_user_setting_get_from_provider($name, $creds) {
+  if ($provider_data = ding_provider_invoke('user', 'get_setting', $creds['name'], $name)) {
+    return $provider_data;
+  }
+  return FALSE;
 }
 
 function _bibdk_usersettings_parse_response($response) {
@@ -191,5 +205,48 @@ function bibdk_usersettings_user_settings_set($name, $value) {
     return false;
   }
 
-  ding_provider_invoke('user', 'set_setting', $creds['name'], $name, $value);
+  if (ding_provider_invoke('user', 'set_setting', $creds['name'], $name, $value)) {
+    // update cache
+    bibdk_usersettings_set_cache($user->uid, $name, $value);
+  }
 }
+
+/** Implements hook_user_logout
+ * clear cached data
+ */
+function bibdk_usersettings_user_logout($account) {
+  bibdk_user_settings_invalidate_cache($account->uid);
+}
+
+/** clear all caches in bin:cache_bibdk_usersettings for given key
+ *
+ * @param type $key 
+ */
+function bibdk_user_settings_invalidate_cache($key) {
+  cache_clear_all($key, 'cache_bibdk_usersettings');
+}
+
+function bibdk_usersettings_get_cache($key) {
+  $cache = cache_get($key, 'cache_bibdk_usersettings');
+
+  if ($cache) {
+    return $cache->data;
+  }
+  return FALSE;
+}
+
+/** Set cache ($key,$data) in bin:cache_bibkd_usersettings
+ *
+ * @param type $key
+ * @param type $data 
+ */
+function bibdk_usersettings_set_cache($key, $name, $value) {
+  $data = bibdk_usersettings_get_cache($key);
+  if ($data === FALSE) {
+    $data = array();
+  }
+  $data[$name] = $value;
+
+  cache_set($key, $data, 'cache_bibdk_usersettings');
+}
+

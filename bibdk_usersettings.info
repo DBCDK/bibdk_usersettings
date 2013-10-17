@@ -3,4 +3,6 @@ description = Enable personal usersettings for display
 package = Bibliotek.dk
 core = 7.x
 version = 7.x-0.2
+files[] = bibdk_usersettings.test
+dependencies[] = bibdk_provider   
 
