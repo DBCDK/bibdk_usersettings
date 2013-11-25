@@ -154,7 +154,7 @@ function bibdk_usersettings_user_settings_get($name, $default) {
     bibdk_usersettings_set_cache($user->uid, $name, $value);
     return $value;
   }
-  
+
   return $default;
 }
 
@@ -220,7 +220,7 @@ function bibdk_usersettings_user_logout($account) {
 
 /** clear all caches in bin:cache_bibdk_usersettings for given key
  *
- * @param type $key 
+ * @param type $key
  */
 function bibdk_user_settings_invalidate_cache($key) {
   cache_clear_all($key, 'cache_bibdk_usersettings');
@@ -238,7 +238,7 @@ function bibdk_usersettings_get_cache($key) {
 /** Set cache ($key,$data) in bin:cache_bibkd_usersettings
  *
  * @param type $key
- * @param type $data 
+ * @param type $data
  */
 function bibdk_usersettings_set_cache($key, $name, $value) {
   $data = bibdk_usersettings_get_cache($key);
