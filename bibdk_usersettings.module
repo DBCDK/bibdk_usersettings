@@ -12,6 +12,25 @@
  */
 
 /**
+ * Implements hook_menu().
+ * Sets up menu items.
+ *
+ */
+function bibdk_usersettings_menu() {
+  $items['user/%user/settings'] =  array(
+    'title' => 'Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bibdk_usersettings_user_settings_form'),
+    'access callback' => 'user_edit_access',
+    'access arguments'=> array(1),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 30,
+  );
+  return $items;
+
+}
+
+/**
  * Implememts hook_user_profile_tabs (
  *
  * @see ding_user.module)
