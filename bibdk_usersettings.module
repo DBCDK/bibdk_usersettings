@@ -12,6 +12,25 @@
  */
 
 /**
+ * Implements hook_menu().
+ * Sets up menu items.
+ *
+ */
+function bibdk_usersettings_menu() {
+  $items['user/%user/settings'] =  array(
+    'title' => 'Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bibdk_usersettings_user_settings_form'),
+    'access callback' => 'user_edit_access',
+    'access arguments'=> array(1),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 30,
+  );
+  return $items;
+
+}
+
+/**
  * Implememts hook_user_profile_tabs (
  *
  * @see ding_user.module)
@@ -38,11 +57,17 @@ function bibdk_usersettings_theme() {
 function bibdk_usersettings_user_settings_form($form, $form_state) {
 
   $tabs = module_invoke_all('bibdk_usersettings_user_tabs');
+
   uasort($tabs, 'drupal_sort_weight');
 
   if (isset($form_state['clicked_button']['#name'])) {
     $firstelement = $form_state['clicked_button']['#name'];
     $tabs[$firstelement]['attributes']['class'] = array('active');
+  }
+
+  if (empty($tabs)){
+    $form['empty_default']['#markup'] = t('No settings can be set');
+    return $form;
   }
 
   foreach ($tabs as $key => $tab) {
@@ -99,7 +124,6 @@ function bibdk_usersettings_user_settings_form($form, $form_state) {
       ),
     ),
   );
-
   return $form;
 }
 
