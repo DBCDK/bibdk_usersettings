@@ -6,7 +6,7 @@
  */
 
 /** Create a table for storing user settings instead of storing in SESSION
- * 
+ *
  */
 
 /**
@@ -28,5 +28,17 @@ function bibdk_usersettings_update_7001() {
     db_create_table($name, $schema);
   } catch (Exception $e) {
     // do nothing table probably already exists
+  }
+}
+
+/**
+ * Remove unused profile2 type
+ * */
+function bibdk_frontend_update_7002(&$sandbox) {
+  if (function_exists('profile2_type_load')) {
+    $profile_type = profile2_type_load('bibdk_usersettings_user_settings');
+    if (is_object($profile_type)) {
+      $profile_type->delete();
+    }
   }
 }

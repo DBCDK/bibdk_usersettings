@@ -30,19 +30,6 @@ function bibdk_usersettings_menu() {
 
 }
 
-/**
- * Implememts hook_user_profile_tabs (
- *
- * @see ding_user.module)
- * */
-function bibdk_usersettings_user_profile2_tabs() {
-  $ret = new stdClass();
-  $ret->label = t('Settings');
-  $ret->form = 'bibdk_usersettings_user_settings_form';
-  $ret->type = 'bibdk_usersettings_user_settings';
-  return $ret;
-}
-
 function bibdk_usersettings_theme() {
   return array('bibdk_usersettings_form' => array(
       'variables' => array('tabs' => array(), 'settings' => array()),
