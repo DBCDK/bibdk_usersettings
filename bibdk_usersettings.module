@@ -52,8 +52,18 @@ function bibdk_usersettings_user_settings_form($form, $form_state) {
     $tabs[$firstelement]['attributes']['class'] = array('active');
   }
 
+  $form['wrapper'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array(
+        'bibdk-tabs',
+        'bibdk-tabs-light'
+      ),
+    ),
+  );
+
   if (empty($tabs)){
-    $form['empty_default']['#markup'] = t('No settings can be set');
+    $form['wrapper']['empty_default']['#markup'] = t('No settings can be set');
     return $form;
   }
 
@@ -94,15 +104,16 @@ function bibdk_usersettings_user_settings_form($form, $form_state) {
   }
   $tab_elements[$firstelement]['#attributes']['class'] = array();
 
-  $form['tabs'] = array(
+  $form['wrapper']['tabs'] = array(
     '#theme' => 'bibdk_usersettings_form',
     '#tabs' => $tabs,
       //'#settings' => $tab_elements
   );
 
-  $form['elements'] = $tab_elements;
-  $form['elements'] += array(
+  $form['wrapper']['elements'] = $tab_elements;
+  $form['wrapper']['elements'] += array(
     '#type' => 'container',
+    '#tree' => true,
     '#attributes' => array(
       'class' => array(
         'tabs-sections',
@@ -111,6 +122,7 @@ function bibdk_usersettings_user_settings_form($form, $form_state) {
       ),
     ),
   );
+
   return $form;
 }
 
@@ -119,17 +131,18 @@ function bibdk_usersettings_user_settings_form($form, $form_state) {
  * @param $form_state
  */
 function bibdk_usersettings_user_settings_form_submit($form, &$form_state) {
-  // Exclude unnecessary elements.
+
   form_state_values_clean($form_state);
 
-  // also unset clicked button
-  unset($form_state['values'][$form_state['clicked_button']['#name']]);
+  $groups = $form_state['values']['elements'];
 
-  foreach ($form_state['values'] as $key => $value) {
-    if (is_array($value) && isset($form_state['values']['array_filter'])) {
-      $value = array_keys(array_filter($value));
+  foreach($groups as $group) {
+    foreach($group as $key => $value) {
+      if (is_array($value) && isset($form_state['values']['array_filter'])) {
+        $value = array_keys(array_filter($value));
+      }
+      bibdk_usersettings_user_settings_set($key, $value);
     }
-    bibdk_usersettings_user_settings_set($key, $value);
   }
 
   $form_state['rebuild'] = TRUE;
@@ -163,7 +176,7 @@ function bibdk_usersettings_user_settings_get($name, $default) {
   if ($provider_data !== FALSE) {
     $value = _bibdk_usersettings_parse_response($provider_data);
     bibdk_usersettings_set_cache($user->uid, $name, $value);
-    return $value;
+    return unserialize($value);
   }
 
   return $default;
@@ -216,7 +229,7 @@ function bibdk_usersettings_user_settings_set($name, $value) {
     return false;
   }
 
-  if (ding_provider_invoke('user', 'set_setting', $creds['name'], $name, $value)) {
+  if (ding_provider_invoke('user', 'set_setting', $creds['name'], $name, serialize($value))) {
     // update cache
     bibdk_usersettings_set_cache($user->uid, $name, $value);
   }
