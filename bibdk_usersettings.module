@@ -174,9 +174,9 @@ function bibdk_usersettings_user_settings_get($name, $default) {
 
   $provider_data = _bibdk_user_setting_get_from_provider($name, $creds);
   if ($provider_data !== FALSE) {
-    $value = _bibdk_usersettings_parse_response($provider_data);
+    $value = unserialize(_bibdk_usersettings_parse_response($provider_data));
     bibdk_usersettings_set_cache($user->uid, $name, $value);
-    return unserialize($value);
+    return $value;
   }
 
   return $default;
