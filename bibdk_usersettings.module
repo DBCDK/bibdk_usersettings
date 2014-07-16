@@ -95,12 +95,17 @@ function bibdk_usersettings_user_settings_form($form, $form_state) {
     // Add elements to tab
     $tab_elements[$element['#tab']] += $element;
 
-    $tab_elements[$element['#tab']]['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('save_settings'),
-      '#action' => 'bibdk_usersettings_user_settings_form_submit',
-      '#name' => $element['#tab'],
+    $tab_elements[$element['#tab']]['actions'] = array(
+      '#type' => 'container',
+      '#weight' => 100,
+      'submit' => array(
+        '#type' => 'submit',
+        '#value' => t('save_settings'),
+        '#action' => 'bibdk_usersettings_user_settings_form_submit',
+        '#name' => $element['#tab'],
+      ),
     );
+
   }
   $tab_elements[$firstelement]['#attributes']['class'] = array();
 
