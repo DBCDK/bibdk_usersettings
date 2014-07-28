@@ -95,12 +95,17 @@ function bibdk_usersettings_user_settings_form($form, $form_state) {
     // Add elements to tab
     $tab_elements[$element['#tab']] += $element;
 
-    $tab_elements[$element['#tab']]['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('save_settings'),
-      '#action' => 'bibdk_usersettings_user_settings_form_submit',
-      '#name' => $element['#tab'],
+    $tab_elements[$element['#tab']]['actions'] = array(
+      '#type' => 'container',
+      '#weight' => 100,
+      'submit' => array(
+        '#type' => 'submit',
+        '#value' => t('save_settings'),
+        '#action' => 'bibdk_usersettings_user_settings_form_submit',
+        '#name' => $element['#tab'],
+      ),
     );
+
   }
   $tab_elements[$firstelement]['#attributes']['class'] = array();
 
@@ -274,3 +279,52 @@ function bibdk_usersettings_set_cache($key, $name, $value) {
   cache_set($key, $data, 'cache_bibdk_usersettings');
 }
 
+/**
+ * @file
+ * Implements hook_bibdk_mypage_tabs().
+ */
+
+function bibdk_usersettings_bibdk_mypage_tabs() {
+  global $user;
+
+  $ret = array();
+  $ret['bibdk_usersettings']['header'] = t('Settings');
+  
+  $ret['bibdk_usersettings']['rows']['values'] = bibdk_usersettings_bibdk_mypage_tabs_rows(variable_get('bibdk_mypage_max_items', 3));
+  $ret['bibdk_usersettings']['link'] = array(
+    'title' => t('Go to settings'),
+    'href' => 'user/' . $user->uid . '/settings',
+  );
+  
+  $ret['bibdk_usersettings']['weight'] = 40;
+  $ret['bibdk_usersettings']['help_text_key'] = 'usersettings_mypage_help_key';
+  
+  return $ret;
+}
+
+/**
+ * return usersetting tabtext 
+ */
+function bibdk_usersettings_bibdk_mypage_tabs_rows($max_rows) {
+  $liste = array();
+  $liste = module_invoke_all('bibdk_usersettings_user_tabs', $liste);
+  uasort($liste, 'drupal_sort_weight');
+
+  foreach ( $liste as $tabtext ) {
+    if (isset($tabtext['title'])) {
+      $ret[] = array('item_row' => t($tabtext['title']));
+      if (count($ret) == $max_rows) {
+        return $ret;
+      }
+    }
+  };
+
+  return $ret;
+}
+
+/**
+ * Implements hook to user_help_list
+ * */
+function bibdk_usersettings_user_help_list() {
+  return array('usersettings_mypage_help_key'=>'usersettings_mypage_help_label');
+}
